@@ -1,0 +1,12 @@
+[package]
+name = "ephemeral_vault"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ephemeral_vault"
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+anchor-lang = { workspace = true }
+solana-program = { workspace = true }

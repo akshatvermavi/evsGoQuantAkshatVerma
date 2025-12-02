@@ -1,0 +1,17 @@
+[workspace]
+members = [
+    "programs/ephemeral_vault",
+]
+
+[programs.localnet]
+ephemeral_vault = "EpheVau1t1111111111111111111111111111111111"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "anchor test"

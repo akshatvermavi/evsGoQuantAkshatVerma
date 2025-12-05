@@ -347,46 +347,6 @@ Short highlights (full details in `docs/security.md`):
 
 ---
 
-## 7. Submission Checklist
-
-Before emailing GoQuant:
-
-1. **Source Code**
-
-   - Ensure this repository (including `programs/`, `backend/`, `docs/`, `tests/`) is pushed to a **private** Git repository *or* zipped.
-2. **Video Demonstration**
-
-   - 10–15 minute recording covering:
-     - Architecture walkthrough (use `docs/architecture.md`).
-     - Smart contract + backend code walkthrough.
-     - Live demo of:
-       - `POST /session/create` + Anchor transactions.
-       - `POST /session/approve`.
-       - `DELETE /session/revoke`.
-       - WebSocket stream showing session events.
-     - Security and edge cases.
-3. **Technical Documentation**
-
-   - Either export `docs/*.md` to a single PDF or attach as Markdown files.
-4. **Test Results & Performance Data**
-
-   - Include:
-     - Anchor test outputs (e.g. `anchor test` summary).
-     - Backend test outputs (if added).
-     - Performance numbers from any load tests.
-5. **Email Submission**
-
-   - To: `careers@goquant.io`
-   - CC: `himanshu.vairagade@goquant.io`
-   - Attach:
-     - Resume.
-     - Source code (private repo link or zip).
-     - Video link (unlisted).
-     - Documentation.
-     - Test and performance summary.
-
----
-
 ## 8. Confidentiality
 
 This assignment implementation is intended **only** for the GoQuant recruitment process. Do not publish this repository, the video, or any documentation publicly (e.g. public GitHub, public YouTube). Keep all materials private and share only with the GoQuant team as per the instructions in the assignment.

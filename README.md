@@ -76,18 +76,19 @@ A few areas are intentionally left as light stubs (e.g., full DEX CPI integratio
 Set these environment variables before running the backend:
 
 ```bash
-export EVS_LISTEN_ADDR=0.0.0.0:8080
-export EVS_DATABASE_URL=postgres://user:password@localhost:5432/evs
-export EVS_DATABASE_MAX_CONNECTIONS=20
+$env:EVS_LISTEN_ADDR = "0.0.0.0:8080"
+$env:EVS_DATABASE_URL = "postgres://user:password@localhost:5432/evs"
+$env:EVS_DATABASE_MAX_CONNECTIONS = "20"
 
-export EVS_SOLANA_RPC_URL=http://localhost:8899
-export EVS_SOLANA_WS_URL=ws://localhost:8900
-export EVS_SOLANA_COMMITMENT=confirmed
+$env:EVS_SOLANA_RPC_URL = "http://localhost:8899"
+$env:EVS_SOLANA_WS_URL = "ws://localhost:8900"
+$env:EVS_SOLANA_COMMITMENT = "confirmed"
 
-# Secrets – use strong random values or a secret manager in practice
-export EVS_KEY_ENCRYPTION_KEY="<32+ byte random string>"
-export EVS_JWT_SECRET="<jwt secret>"
-export EVS_RATE_LIMIT_SESSIONS_PER_MINUTE=60
+# Secrets
+$env:EVS_KEY_ENCRYPTION_KEY = "<32+ byte random string>"
+$env:EVS_JWT_SECRET = "<jwt secret>"
+
+$env:EVS_RATE_LIMIT_SESSIONS_PER_MINUTE = "60"
 ```
 
 > In production, `EVS_KEY_ENCRYPTION_KEY` and `EVS_JWT_SECRET` should be managed via a secure secret store or HSM/KMS.
@@ -140,6 +141,7 @@ The service listens on `EVS_LISTEN_ADDR` (default `127.0.0.1:8080`).
 ### 4.1 Session Creation & Delegation
 
 1. **Create a session (backend, off-chain)**
+
    - Request:
      ```bash
      curl -X POST http://localhost:8080/session/create \
@@ -154,14 +156,14 @@ The service listens on `EVS_LISTEN_ADDR` (default `127.0.0.1:8080`).
      - `session.id` – UUID for tracking.
      - `session.session_expiry` – expiry time.
      - `ephemeral_wallet` – base58 pubkey used on-chain.
-
 2. **Create vault + approve delegate (on-chain)**
+
    - Frontend uses Anchor IDL to build and send:
      - `create_vault(session_duration, max_deposit, ephemeral_wallet)`.
      - `approve_delegate(ephemeral_wallet)`.
    - Both must be signed by the **parent wallet**.
-
 3. **Mark session active (backend)**
+
    - After on-chain confirmation, call:
      ```bash
      curl -X POST http://localhost:8080/session/approve \
@@ -176,6 +178,7 @@ The service listens on `EVS_LISTEN_ADDR` (default `127.0.0.1:8080`).
 ### 4.2 Auto-Deposit & Trading
 
 4. **Auto-deposit for trade fees**
+
    - Backend (or UI) calls `POST /session/deposit` to request funding:
      ```bash
      curl -X POST http://localhost:8080/session/deposit \
@@ -188,14 +191,15 @@ The service listens on `EVS_LISTEN_ADDR` (default `127.0.0.1:8080`).
      ```
    - `AutoDepositCalculator` suggests lamports for N trades.
    - On a full integration, the backend would then send `auto_deposit_for_trade` on-chain with the parent as signer.
-
 5. **Execute trades (on-chain)**
+
    - Trading subsystem uses the **ephemeral wallet** as signer.
    - Calls `execute_trade(fee_paid)` to record fee usage for each executed trade.
 
 ### 4.3 Revocation & Cleanup
 
 6. **Manual revoke** (parent-driven)
+
    - UI calls backend:
      ```bash
      curl -X DELETE http://localhost:8080/session/revoke \
@@ -207,8 +211,8 @@ The service listens on `EVS_LISTEN_ADDR` (default `127.0.0.1:8080`).
      - Mark vault inactive.
      - Revoke delegation.
      - Return remaining lamports to parent.
-
 7. **Automatic cleanup** (post-expiry)
+
    - Once `Clock::unix_timestamp >= session_expiry`:
      - Anyone can call `cleanup_vault` to close vault, reward the cleaner, and return funds to the parent.
    - Backend `VaultMonitor` is designed to periodically scan for expired sessions and trigger cleanup transactions.
@@ -224,6 +228,7 @@ The service listens on `EVS_LISTEN_ADDR` (default `127.0.0.1:8080`).
 Location: `tests/ephemeral_vault.ts`
 
 **What it covers**
+
 - End-to-end flow for:
   - Creating a vault via `create_vault`.
   - Approving delegation via `approve_delegate`.
@@ -243,6 +248,7 @@ anchor test
 ```
 
 **Expected outcome**
+
 - Test suite passes with 1 green test:
   - `"can create a vault and approve delegate"`.
 - Resulting `EphemeralVault` has `isActive = true` and `maxDeposit` equal to the configured value.
@@ -252,12 +258,13 @@ anchor test
 The backend is structured for unit/integration tests. Example categories:
 
 1. **Key encryption round-trip**
+
    - Test `encrypt_keypair` + `decrypt_keypair` produce the original `Keypair`.
-
 2. **Auto-deposit math**
-   - For each `PriorityLevel`, verify `compute_deposit_for_trades` equals `estimate_fee_per_trade * num_trades`.
 
+   - For each `PriorityLevel`, verify `compute_deposit_for_trades` equals `estimate_fee_per_trade * num_trades`.
 3. **Session lifecycle** (with a test DB)
+
    - `create_session` inserts a row with status `CREATED`.
    - `mark_active` updates status to `ACTIVE` and sets `vault_pubkey`.
    - `revoke` updates status to `REVOKED`.
@@ -271,12 +278,13 @@ cargo test -p backend
 ### 5.3 Manual API Verification
 
 1. **Health check**
+
    ```bash
    curl http://localhost:8080/health
    # Should return: ok
    ```
-
 2. **Session create / approve / revoke**
+
    - Use the curl examples from Section 4 and observe:
      - HTTP status codes (`200`, `202`, `404` as appropriate).
      - WebSocket events if you connect a WS client to `/ws/session`.
@@ -303,6 +311,7 @@ hey -n 1000 -c 200 \
 ```
 
 Record and summarize:
+
 - Avg latency (ms).
 - p95 latency (ms).
 - Any observed bottlenecks.
@@ -316,22 +325,23 @@ You can add your measured numbers to this README before final submission.
 Short highlights (full details in `docs/security.md`):
 
 - **Custody**
+
   - Parent wallet remains the ultimate authority for funding, delegation, and revocation.
   - On-chain program enforces `has_one` relations and signer checks.
-
 - **Delegation Scope**
+
   - Delegation is restricted to the ephemeral wallet defined at vault creation.
   - `execute_trade` requires a valid, non‑revoked `VaultDelegation` account and delegate signer.
-
 - **Session Boundaries**
+
   - Time-based expiry enforced against `Clock::unix_timestamp`.
   - `cleanup_vault` is permissionless post‑expiry and guarantees fund return.
-
 - **Ephemeral Key Security**
+
   - Ephemeral private keys are encrypted at rest using AES‑GCM with a PBKDF2‑derived key.
   - Keys are decrypted only in memory for signing and then dropped.
-
 - **Operational Controls**
+
   - Configurable rate limiting and planned JWT-based API auth.
   - Clear extension points for anomaly detection, IP/device restrictions, and an emergency kill switch.
 
@@ -342,9 +352,10 @@ Short highlights (full details in `docs/security.md`):
 Before emailing GoQuant:
 
 1. **Source Code**
-   - Ensure this repository (including `programs/`, `backend/`, `docs/`, `tests/`) is pushed to a **private** Git repository *or* zipped.
 
+   - Ensure this repository (including `programs/`, `backend/`, `docs/`, `tests/`) is pushed to a **private** Git repository *or* zipped.
 2. **Video Demonstration**
+
    - 10–15 minute recording covering:
      - Architecture walkthrough (use `docs/architecture.md`).
      - Smart contract + backend code walkthrough.
@@ -354,17 +365,17 @@ Before emailing GoQuant:
        - `DELETE /session/revoke`.
        - WebSocket stream showing session events.
      - Security and edge cases.
-
 3. **Technical Documentation**
-   - Either export `docs/*.md` to a single PDF or attach as Markdown files.
 
+   - Either export `docs/*.md` to a single PDF or attach as Markdown files.
 4. **Test Results & Performance Data**
+
    - Include:
      - Anchor test outputs (e.g. `anchor test` summary).
      - Backend test outputs (if added).
      - Performance numbers from any load tests.
-
 5. **Email Submission**
+
    - To: `careers@goquant.io`
    - CC: `himanshu.vairagade@goquant.io`
    - Attach:

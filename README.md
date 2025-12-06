@@ -346,7 +346,3 @@ Short highlights (full details in `docs/security.md`):
   - Clear extension points for anomaly detection, IP/device restrictions, and an emergency kill switch.
 
 ---
-
-## 8. Confidentiality
-
-This assignment implementation is intended **only** for the GoQuant recruitment process. Do not publish this repository, the video, or any documentation publicly (e.g. public GitHub, public YouTube). Keep all materials private and share only with the GoQuant team as per the instructions in the assignment.
